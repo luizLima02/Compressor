@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 #include<fstream>
+#include <set>
 
 struct Color{
     int r, g, b;
@@ -188,7 +189,7 @@ public:
         m_colors[y * m_width + x].v = cor.v;
     }
 
-    void ler(const char* path, int rk, int gk, int bk ){}
+    //void ler(const char* path, int rk, int gk, int bk ){}
 
     void salvar(const char* path) const
     {
@@ -342,17 +343,26 @@ void Imagem::ler(const char* path, int rk, int gk, int bk ){
     m_colors.reserve(m_width * m_height);
 
     const int paddingAmount = ((4 - (m_width * 3) % 4) % 4);
-     for(int y = 0; y < m_height; y++){
+    //std::set<int> hs;
+    //int ocorrenciasDeH[256] = {0};
+    for(int y = 0; y < m_height; y++){
         for (int x = 0; x < m_width; x++){
             unsigned char color[3];
             f.read(reinterpret_cast<char*>(color), 3);
             m_colors[y * m_width + x].g = static_cast<int>(color[gk]);
             m_colors[y * m_width + x].r = static_cast<int>(color[rk]);
             m_colors[y * m_width + x].b = static_cast<int>(color[bk]);
+            //HSV hsvC(m_colors[y * m_width + x].r, m_colors[y * m_width + x].g, m_colors[y * m_width + x].b);
+            //hs.insert(hsvC.h);
+            //ocorrenciasDeH[hsvC.h]++;
         }
         f.ignore(paddingAmount);
     }
     f.close();
+
+    /*for (const auto& valor : hs) {
+        std::cout << "Cor em hsv: "<< valor << " ocorrencias: " << ocorrenciasDeH[valor] << "\n";
+    }*/
 
     std::cout << "arquivo " << path << " lido\n";
 }
