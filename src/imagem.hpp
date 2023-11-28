@@ -7,7 +7,15 @@
 #include <algorithm>
 #include <cmath>
 #include<fstream>
-#include <set>
+#include<map>
+#include<set>
+#include<string>
+
+using std::string;
+
+
+
+
 
 struct Color{
     int r, g, b;
@@ -27,14 +35,13 @@ struct Color{
 };
 
 struct HSV{
-    int h;
-    float s, v;
+    int h, s, v;
 
     HSV():h(0), s(0), v(0)
     {
     }
 
-    HSV(int h, float s, float v):h(h), s(s), v(v)
+    HSV(int h, int s, int v):h(h), s(s), v(v)
     {
     }
 
@@ -62,10 +69,10 @@ struct HSV{
         if (max == 0) {
             s = 0;
         } else {
-            s = (diff / max) * 100;
+            s = round((diff / max) * 100);
         }
 
-        v = max * 100;
+        v = round(max * 100);
 
         h = round((ht / 360.0) * 255);
     }
@@ -94,9 +101,9 @@ Color int_color(int cor)
     return Color(r,g,b);
 }
 
-Color hsvToRgb(int h, float s, float v) {
-    s /= 100;
-    v /= 100;
+Color hsvToRgb(int h, int si, int vi) {
+    float s = si / 100;
+    float v = vi /100;
 
     float hi = (h / 255.0) * 360.0;
     int r;
@@ -147,8 +154,10 @@ class Imagem
 private:
     int m_width;
     int m_height;
-    std::vector<Color> m_colors;
+    
 public:
+    std::vector<Color> m_colors;
+
     Imagem(int width, int height);
     ~Imagem();
 
@@ -164,6 +173,7 @@ public:
 };
 
 
+
 class ImagemCompactada
 {
 private:
@@ -173,8 +183,10 @@ private:
 public:
     ImagemCompactada(int width, int height):m_width(width), m_height(height), m_colors(std::vector<HSV>(width*height))
     {}
+    
+    
 
-    ~ImagemCompactada();
+    ~ImagemCompactada(){}
 
     int getWidth(){return m_width;}
 
@@ -191,7 +203,7 @@ public:
 
     //void ler(const char* path, int rk, int gk, int bk ){}
 
-    void salvar(const char* path) const
+    void salvar(const char* path, Imagem img) const
     {
         std::fstream f;
     f.open(path, std::ios::out | std::ios::binary);
@@ -276,7 +288,7 @@ public:
 
     f.write(reinterpret_cast<char*>(fileHeader), fileHeaderSize);
     f.write(reinterpret_cast<char*>(informationHeader), informationHeaderSize);
-
+  
     for(int y = 0; y < m_height; y++){
         for (int x = 0; x < m_width; x++){
             unsigned char h = static_cast<unsigned char>(getColor(x, y).h);
@@ -343,6 +355,10 @@ void Imagem::ler(const char* path, int rk, int gk, int bk ){
     m_colors.reserve(m_width * m_height);
 
     const int paddingAmount = ((4 - (m_width * 3) % 4) % 4);
+    int hOcr[256] = {0};
+    /*for (int i = 0; i < 256; i++){
+        hOcr[std::to_string(i)] = 0;
+    }*/
     //std::set<int> hs;
     //int ocorrenciasDeH[256] = {0};
     for(int y = 0; y < m_height; y++){
@@ -352,15 +368,30 @@ void Imagem::ler(const char* path, int rk, int gk, int bk ){
             m_colors[y * m_width + x].g = static_cast<int>(color[gk]);
             m_colors[y * m_width + x].r = static_cast<int>(color[rk]);
             m_colors[y * m_width + x].b = static_cast<int>(color[bk]);
-            //HSV hsvC(m_colors[y * m_width + x].r, m_colors[y * m_width + x].g, m_colors[y * m_width + x].b);
+            HSV hsvC(m_colors[y * m_width + x].r, m_colors[y * m_width + x].g, m_colors[y * m_width + x].b);
             //hs.insert(hsvC.h);
+            if(hsvC.v > 5){
+                hOcr[hsvC.h]++;
+                hOcr[hsvC.s]++;
+                hOcr[hsvC.v]++;
+            }else{
+                hOcr[hsvC.v]++;
+            }
+            
             //ocorrenciasDeH[hsvC.h]++;
         }
         f.ignore(paddingAmount);
     }
     f.close();
+    
+    /*for (auto& i : hOcr){
+        std::cout << "Cor em hsv: "<< i.first << " ocorrencias: " << i.second << "\n";
+    }*/
+    for (int i = 0; i < 256; i++){
+        std::cout << "Cor em hsv: "<< i << " ocorrencias: " << hOcr[i] << "\n";
+    }
 
-    /*for (const auto& valor : hs) {
+    /*for (const auto& valor : hOcr) {
         std::cout << "Cor em hsv: "<< valor << " ocorrencias: " << ocorrenciasDeH[valor] << "\n";
     }*/
 
