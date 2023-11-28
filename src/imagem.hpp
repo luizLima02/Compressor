@@ -13,7 +13,24 @@
 
 using std::string;
 
+using std::pair;
 
+void insertionSort(pair<int,int> arr[], int size)
+{
+    int i, j;
+    pair<int,int> key;
+
+    for(i = 1; i < size; i++)
+    {
+        key = arr[i];
+        j = i - 1;
+        while( j >= 0 && arr[j].second > key.second){
+            arr[j+1] = arr[j];
+            j = j - 1;
+        }
+        arr[j + 1] = key;
+    }
+}
 
 
 
@@ -173,142 +190,6 @@ public:
 };
 
 
-
-class ImagemCompactada
-{
-private:
-    int m_width;
-    int m_height;
-    std::vector<HSV> m_colors;
-public:
-    ImagemCompactada(int width, int height):m_width(width), m_height(height), m_colors(std::vector<HSV>(width*height))
-    {}
-    
-    
-
-    ~ImagemCompactada(){}
-
-    int getWidth(){return m_width;}
-
-    int getHeight(){return m_height;}
-
-    HSV getColor(int x, int y) const { return m_colors[y * m_width + x]; }
-
-    void setColor(const HSV& cor, int x, int y)
-    {
-        m_colors[y * m_width + x].h = cor.h;
-        m_colors[y * m_width + x].s = cor.s;
-        m_colors[y * m_width + x].v = cor.v;
-    }
-
-    //void ler(const char* path, int rk, int gk, int bk ){}
-
-    void salvar(const char* path, Imagem img) const
-    {
-        std::fstream f;
-    f.open(path, std::ios::out | std::ios::binary);
-    
-    if(!f.is_open()){
-        std::cout << "Erro ao salvar\n";
-        return;
-    }
-
-    unsigned char bmpPad[3] = {0, 0, 0};
-    const int paddingAmount = ((4 - (m_width * 3) % 4) % 4);
-
-    const int fileHeaderSize = 7;
-    const int informationHeaderSize = 40;
-    const int fileSize = fileHeaderSize + informationHeaderSize + m_width * m_height * 3 + paddingAmount * m_height;
-
-    unsigned char fileHeader[fileHeaderSize];
-    //file type
-    fileHeader[0] = 'L';
-    fileHeader[1] = 'N';
-    //file size
-    fileHeader[2] = fileSize;
-    fileHeader[3] = fileSize >> 8;
-    fileHeader[4] = fileSize >> 16;
-    fileHeader[5] = fileSize >> 24;
-    //pixel data offset
-    fileHeader[6] = fileHeaderSize + informationHeaderSize;
-
-
-    unsigned char informationHeader[informationHeaderSize];
-    //header size
-    informationHeader[0] = informationHeaderSize;
-    informationHeader[1] = 0;
-    informationHeader[2] = 0;
-    informationHeader[3] = 0;
-    //image width
-    informationHeader[4] = m_width;
-    informationHeader[5] = m_width >> 8;
-    informationHeader[6] = m_width >> 16;
-    informationHeader[7] = m_width >> 24;
-    //image height
-    informationHeader[8] = m_height;
-    informationHeader[9] = m_height >> 8;
-    informationHeader[10] = m_height >> 16;
-    informationHeader[11] = m_height >> 24;
-    //planes
-    informationHeader[12] = 1;
-    informationHeader[13] = 0;
-    //bits per pixel(rgb)
-    informationHeader[14] = 24;
-    informationHeader[15] = 0;
-    //compression (no compression) 
-    informationHeader[16] = 0;
-    informationHeader[17] = 0;
-    informationHeader[18] = 0;
-    informationHeader[19] = 0;
-    //image size (no compression) 
-    informationHeader[20] = 0;
-    informationHeader[21] = 0;
-    informationHeader[22] = 0;
-    informationHeader[23] = 0;
-    //X pixels per meter
-    informationHeader[24] = 0;
-    informationHeader[25] = 0;
-    informationHeader[26] = 0;
-    informationHeader[27] = 0;
-    //Y pixels per meter
-    informationHeader[28] = 0;
-    informationHeader[29] = 0;
-    informationHeader[30] = 0;
-    informationHeader[31] = 0;
-    //total colors
-    informationHeader[32] = 0;
-    informationHeader[33] = 0;
-    informationHeader[34] = 0;
-    informationHeader[35] = 0;
-    //important colors
-    informationHeader[36] = 0;
-    informationHeader[37] = 0;
-    informationHeader[38] = 0;
-    informationHeader[39] = 0;
-
-    f.write(reinterpret_cast<char*>(fileHeader), fileHeaderSize);
-    f.write(reinterpret_cast<char*>(informationHeader), informationHeaderSize);
-  
-    for(int y = 0; y < m_height; y++){
-        for (int x = 0; x < m_width; x++){
-            unsigned char h = static_cast<unsigned char>(getColor(x, y).h);
-            unsigned char s = static_cast<unsigned char>(getColor(x, y).s);
-            unsigned char v = static_cast<unsigned char>(getColor(x, y).v);
-
-            unsigned char color[] = {h, s, v};
-
-            f.write(reinterpret_cast<char*>(color), 3);
-        }
-        f.write(reinterpret_cast<char*>(bmpPad), paddingAmount);
-    }
-
-    f.close();
-
-    std::cout << "Salvo em " << path << "\n";
-    }
-};
-
-
 Imagem::Imagem(int width, int height)
     :m_width(width), m_height(height), m_colors(std::vector<Color>(width*height))
 {
@@ -355,12 +236,14 @@ void Imagem::ler(const char* path, int rk, int gk, int bk ){
     m_colors.reserve(m_width * m_height);
 
     const int paddingAmount = ((4 - (m_width * 3) % 4) % 4);
-    int hOcr[256] = {0};
-    /*for (int i = 0; i < 256; i++){
-        hOcr[std::to_string(i)] = 0;
-    }*/
+    //int hOcr[256] = {0};
+
+    pair<int, int> Ocorrencias[256];
+    for (int i = 0; i < 256; i++){
+        Ocorrencias[i].first  = i;
+        Ocorrencias[i].second = 0;
+    }
     //std::set<int> hs;
-    //int ocorrenciasDeH[256] = {0};
     for(int y = 0; y < m_height; y++){
         for (int x = 0; x < m_width; x++){
             unsigned char color[3];
@@ -371,24 +254,24 @@ void Imagem::ler(const char* path, int rk, int gk, int bk ){
             HSV hsvC(m_colors[y * m_width + x].r, m_colors[y * m_width + x].g, m_colors[y * m_width + x].b);
             //hs.insert(hsvC.h);
             if(hsvC.v > 5){
-                hOcr[hsvC.h]++;
-                hOcr[hsvC.s]++;
-                hOcr[hsvC.v]++;
+                Ocorrencias[hsvC.h].second++;
+                Ocorrencias[hsvC.s].second++;
+                Ocorrencias[hsvC.v].second++;
             }else{
-                hOcr[hsvC.v]++;
+                Ocorrencias[hsvC.v].second++;
             }
             
-            //ocorrenciasDeH[hsvC.h]++;
         }
         f.ignore(paddingAmount);
     }
     f.close();
     
-    /*for (auto& i : hOcr){
-        std::cout << "Cor em hsv: "<< i.first << " ocorrencias: " << i.second << "\n";
-    }*/
+    insertionSort(Ocorrencias, 256);
     for (int i = 0; i < 256; i++){
-        std::cout << "Cor em hsv: "<< i << " ocorrencias: " << hOcr[i] << "\n";
+        Ocorrencias[i].second = i;
+    }
+    for (int i = 0; i < 256; i++){
+        std::cout << "Cor em hsv: "<< Ocorrencias[i].first << " ocorrencias: " << Ocorrencias[i].second << "\n";
     }
 
     /*for (const auto& valor : hOcr) {

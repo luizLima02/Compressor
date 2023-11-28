@@ -9,8 +9,6 @@ std::string caminhoSalvo = "ImagensSalvas";
 
 
 int main(){
-	system("cls");
-	system("cls");
 	std::cout << "start conversor!\n";
 	//std::string nomeArquivo = "copia2.bmp";
 
