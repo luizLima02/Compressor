@@ -10,6 +10,7 @@
 #include<map>
 #include<set>
 #include<string>
+#include<new>
 
 using std::string;
 
@@ -166,6 +167,15 @@ Color hsvToRgb(int h, int si, int vi) {
     return Color(r, g, b);
 }
 
+struct vecRetorno{
+    int hs_size;
+    int v_size;
+    pair<int, int> frequencia[256];
+
+};
+
+
+
 class Imagem
 {
 private:
@@ -185,7 +195,7 @@ public:
     Color getColor(int x, int y) const;
     void setColor(const Color& cor, int x, int y);
 
-    void ler(const char* path, int rk, int gk, int bk );
+    vecRetorno* ler(const char* path, int rk, int gk, int bk );
     void salvar(const char* path) const;
 };
 
@@ -209,14 +219,15 @@ void Imagem::setColor(const Color& color, int x, int y){
     m_colors[y * m_width + x].b = color.b;
 }
 
-void Imagem::ler(const char* path, int rk, int gk, int bk ){
+
+vecRetorno* Imagem::ler(const char* path, int rk, int gk, int bk ){
    std::fstream f;
    //seleciona o arquivo, modo de abertura (leitura, escrita, atualizacao) | como vai ler arquivo
    f.open(path, std::ios::in | std::ios::binary);
 
    if(!f.is_open()){
     std::cout << "error ao ler arquivo";
-    return;
+    return nullptr;
    }
 
     const int fileHeaderSize = 14;
@@ -236,9 +247,10 @@ void Imagem::ler(const char* path, int rk, int gk, int bk ){
     m_colors.reserve(m_width * m_height);
 
     const int paddingAmount = ((4 - (m_width * 3) % 4) % 4);
-    //int hOcr[256] = {0};
-
+    
+    //criacao do vetor de frequencia e dos tamanhos dos vetores hs e v
     pair<int, int> Ocorrencias[256];
+    int ocoorenciasDeZero = 0;
     for (int i = 0; i < 256; i++){
         Ocorrencias[i].first  = i;
         Ocorrencias[i].second = 0;
@@ -259,6 +271,7 @@ void Imagem::ler(const char* path, int rk, int gk, int bk ){
                 Ocorrencias[hsvC.v].second++;
             }else{
                 Ocorrencias[hsvC.v].second++;
+                ocoorenciasDeZero++;
             }
             
         }
@@ -268,17 +281,26 @@ void Imagem::ler(const char* path, int rk, int gk, int bk ){
     
     insertionSort(Ocorrencias, 256);
     for (int i = 0; i < 256; i++){
-        Ocorrencias[i].second = i;
+        Ocorrencias[i].second = i+1;
     }
-    for (int i = 0; i < 256; i++){
+    /*for (int i = 0; i < 256; i++){
         std::cout << "Cor em hsv: "<< Ocorrencias[i].first << " ocorrencias: " << Ocorrencias[i].second << "\n";
+    }*/
+    vecRetorno* ret = new(std::nothrow)vecRetorno;
+    ret->hs_size = m_width*m_height - ocoorenciasDeZero;
+    ret->v_size  = m_width*m_height;
+    for (int i = 0; i < 256; i++){
+        ret->frequencia[i].first  =  Ocorrencias[i].first;
+        ret->frequencia[i].second = Ocorrencias[i].second;
     }
-
+    
     /*for (const auto& valor : hOcr) {
         std::cout << "Cor em hsv: "<< valor << " ocorrencias: " << ocorrenciasDeH[valor] << "\n";
     }*/
 
     std::cout << "arquivo " << path << " lido\n";
+
+    return ret;
 }
 
 
