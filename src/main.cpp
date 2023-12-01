@@ -24,12 +24,16 @@ int main(){
 
 	Imagem img(0, 0);
 	vecRetorno *v = img.ler("benchmark.bmp", 1,0,2);
-
-    std::cout << "v size: " << v->v_size << '\n';
-    std::cout << "hs size: " << v->hs_size << '\n';
-    for (int i = 0; i < 256; i++){
-        std::cout << "Cor em hsv: "<< v->frequencia[i].first << " ocorrencias: " << v->frequencia[i].second << "\n";
+  
+    auto arvore = huffman(v->frequencia, 256);
+    for(int i = 0; i < 256; i++){
+        auto repres = geRepresentacao(arvore, i);
+        std::cout <<"Nova representacao de " << i << " R: " << repres <<"\n";
     }
+    
+    //std::cout << (s == "ach") << "\n-------------------\n";
+    //std::cout <<"Valor de 254 arvore " << repres <<"\n-------------------\n";
+    //lista.printLista();
 	//std::string saida = caminhoSalvo + "/" + nomeArquivo;
 
 	/*std::ifstream file("benchmark.bmp", std::ios::binary);
@@ -48,6 +52,6 @@ int main(){
     file.close();
 	//img.salvar(saida.c_str());
 	*/
-	system("pause");
+	//system("pause");
 	return 0;
 }

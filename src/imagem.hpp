@@ -281,7 +281,7 @@ vecRetorno* Imagem::ler(const char* path, int rk, int gk, int bk ){
     
     insertionSort(Ocorrencias, 256);
     for (int i = 0; i < 256; i++){
-        Ocorrencias[i].second = i+1;
+        Ocorrencias[i].second = i;
     }
     /*for (int i = 0; i < 256; i++){
         std::cout << "Cor em hsv: "<< Ocorrencias[i].first << " ocorrencias: " << Ocorrencias[i].second << "\n";
