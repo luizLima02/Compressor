@@ -150,18 +150,18 @@ string geRepresentacao(Noh* n, int valorProcurado){
     if(n->fEsquerdo != nullptr){
         string r = geRepresentacao(n->fEsquerdo, valorProcurado);
         if(r == "achei"){
-            return string("E");
+            return string("0");
         }else if(r != "nao"){
-            return string("E") + r;
+            return string("0") + r;
         }
     }
 
     if(n->fEsquerdo !=nullptr ){
         string r = geRepresentacao(n->fDireito, valorProcurado);
         if(r == "achei"){
-            return string("D");
+            return string("1");
         }else if(r != "nao"){
-            return string("D") + r;
+            return string("1") + r;
         }
     }
 
@@ -171,7 +171,7 @@ string geRepresentacao(Noh* n, int valorProcurado){
 
 
 //Passa uma lista de nohs ordenados da menor frequencia para a maior
-/*priority_queue<Noh*, vector<Noh*>, Compare>*/Noh* huffman(pair<int, int>* ocorrencias, int sizeOcor){
+Noh* huffman(pair<int, int>* ocorrencias, int sizeOcor){
     priority_queue<Noh*, vector<Noh*>, Compare> freq;
     for (int i = 0; i < sizeOcor; i++)
     {
@@ -193,9 +193,148 @@ string geRepresentacao(Noh* n, int valorProcurado){
     return x;
 }
 
+char toByte(string rep){
+    char c = 0;
+    for(int i = 0; i < 8; i++){
+        c = c << 1;
+        if(rep[i] == '1'){
+            c = c | 0b1;
+        }else{
+            c = c | 0b0;   
+        }
+    }
+    return c;
+}
+
+char toByteEsp(string rep, int s, int size){
+    char c = 0;
+    string r = rep;
+    for(int i = 0; i < s; i++){
+        r += "0";
+    }
+    for(int i = 0; i < size; i++){
+        c = c << 1;
+        if(r[i] == '1'){
+            c = c | 0b1;
+        }else{
+            c = c | 0b0;
+        }
+    }
+    return c;
+}
+
+
+char toByteVal(string rep, int s, int size){
+    char c = 0;
+    string r = rep;
+    for(int i = 0; i < s; i++){
+        r += "0";
+    }
+    for(int i = 0; i < size; i++){
+        c = c << 1;
+        if(r[i] == '1'){
+            c = c | 0b1;
+        }else{
+            c = c | 0b0;
+        }
+    }
+    return c;
+}
 
 
 
+
+string fromByte(char rep){
+    string saida = "";
+    
+    for(int i = 0; i < 8; i++){
+        int r = rep & 0b1;
+        if(r == 1){
+            saida = "1" + saida;
+        }else{
+            saida = "0" + saida;
+        }
+        rep = rep >> 1;
+    }
+    return saida;
+}
+
+
+
+
+string stringFromV(std::vector<int> v_values, Noh* huff){
+    string s = "";
+    for(int i = 0; i < v_values.size(); i++)
+    {
+        string k = geRepresentacao(huff, v_values[i]);
+        s += k;
+    }
+    return s;
+}
+
+string stringFromH(std::vector<pair<int, int>> hs_values, Noh* huff){
+    string s = "";
+    for(int i = 0; i < hs_values.size(); i++)
+    {
+        string k = geRepresentacao(huff, hs_values[i].first);
+        s += k;
+    }
+    return s;
+}
+
+string stringFromS(std::vector<pair<int, int>> hs_values, Noh* huff){
+    string s = "";
+    for(int i = 0; i < hs_values.size(); i++)
+    {
+        string k = geRepresentacao(huff, hs_values[i].second);
+        s += k;
+    }
+    return s;
+}
+
+
+int getNumeroFrom(string rep, Noh* arvore){
+    Noh* iterador = arvore;
+    if(rep == ""){
+        return iterador->valor.first;
+    }else{
+        for(int k = 0; k < rep.size(); k++){
+            //percorre a arvore
+            if(rep[k] == '1'){
+                iterador = iterador->fDireito;
+            }else{
+                iterador = iterador->fEsquerdo;
+            }
+            //nao achou rep
+            if(iterador == nullptr){
+                return -1;
+            }
+        }
+        return iterador->valor.first;
+    }
+}
+
+std::vector<int> getNumeroFromLista(string rep, Noh* arvore){
+    
+    std::cout <<"iniciado reconstrucao da lista\n";
+    //Noh* iterador = arvore;
+    std::vector<int> valores_de_retorno;
+    int i = 0;
+    int size = 1;
+    //procura de i a f
+    while((i+size) < rep.size()){
+        string pesq = rep.substr(i, size);
+        int valor = getNumeroFrom(pesq, arvore);
+        if(valor == -1){
+            size++;
+        }else{
+            valores_de_retorno.push_back(valor);
+            i += size;
+            size = 1;
+        }
+    }
+    return valores_de_retorno;
+}
 
 
 ////Codigo Legado

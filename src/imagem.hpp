@@ -59,8 +59,36 @@ struct HSV{
     {
     }
 
-    HSV(int h, int s, int v):h(h), s(s), v(v)
+    HSV(int r, int g, int b)
     {
+        float ht = 0;
+        float R = r / 255.0f;
+        float G = g / 255.0f;
+        float B = b / 255.0f;
+
+        float max = std::max(R, std::max(G, B));
+        float min = std::min(R, std::min(G, B));
+        float diff = max - min;
+
+        if (max == min) {
+            ht = 0;
+        } else if (max == R) {
+            ht = fmod((60 * ((G - B) / diff) + 360), 360);
+        } else if (max == G) {
+            ht = fmod((60 * ((B - R) / diff) + 120), 360);
+        } else if (max == B) {
+            ht = fmod((60 * ((R - G) / diff) + 240), 360);
+        }
+
+        if (max == 0) {
+            s = 0;
+        } else {
+            s = round((diff / max) * 100);
+        }
+
+        v = round(max * 100);
+
+        h = round((ht / 360.0) * 255);
     }
 
     HSV(Color cor)
@@ -120,10 +148,10 @@ Color int_color(int cor)
 }
 
 Color hsvToRgb(int h, int si, int vi) {
-    float s = si / 100;
-    float v = vi /100;
+    float s = float(si) / 100.0;
+    float v = float(vi) /100.0;
 
-    float hi = (h / 255.0) * 360.0;
+    float hi = (float(h) / 255.0) * 360.0;
     int r;
     int g;
     int b;
@@ -167,11 +195,25 @@ Color hsvToRgb(int h, int si, int vi) {
     return Color(r, g, b);
 }
 
-struct vecRetorno{
-    int hs_size;
-    int v_size;
-    pair<int, int> frequencia[256];
+std::vector<Color> FromHSV(std::vector<int> h, std::vector<int> s, std::vector<int> v, int width, int height){
+    std::vector<Color> colRet;
+    colRet.reserve(width * height);
+    for(int y = 0; y < width; y+=2){
+       for(int x = 0; x < height; x+=2){
+           
+           
+        }
+    }
+}
 
+
+struct vecRetorno{
+    int width;
+    int height;
+    int FileSize;
+    pair<int, int> frequencia[256];
+    std::vector<int> v_values;
+    std::vector<pair<int, int>> hs_values;
 };
 
 
@@ -195,8 +237,10 @@ public:
     Color getColor(int x, int y) const;
     void setColor(const Color& cor, int x, int y);
 
-    vecRetorno* ler(const char* path, int rk, int gk, int bk );
+    vecRetorno* ler(const char* path, int rk, int gk, int bk, int window );
     void salvar(const char* path) const;
+
+    //void descompactar(const char* path);
 };
 
 
@@ -220,7 +264,7 @@ void Imagem::setColor(const Color& color, int x, int y){
 }
 
 
-vecRetorno* Imagem::ler(const char* path, int rk, int gk, int bk ){
+vecRetorno* Imagem::ler(const char* path, int rk, int gk, int bk, int window){
    std::fstream f;
    //seleciona o arquivo, modo de abertura (leitura, escrita, atualizacao) | como vai ler arquivo
    f.open(path, std::ios::in | std::ios::binary);
@@ -243,19 +287,19 @@ vecRetorno* Imagem::ler(const char* path, int rk, int gk, int bk ){
     int fileSize = fileHeader[2] + (fileHeader[3] << 8) + (fileHeader[4] << 16) + (fileHeader[5] << 24);
     m_width =  informationHeader[4] + (informationHeader[5] << 8) + (informationHeader[6]  << 16) + (informationHeader[7]   << 24);
     m_height = informationHeader[8] + (informationHeader[9] << 8) + (informationHeader[10] << 16) + (informationHeader[11]  << 24);
-    
+
     m_colors.reserve(m_width * m_height);
 
     const int paddingAmount = ((4 - (m_width * 3) % 4) % 4);
     
     //criacao do vetor de frequencia e dos tamanhos dos vetores hs e v
     pair<int, int> Ocorrencias[256];
-    int ocoorenciasDeZero = 0;
     for (int i = 0; i < 256; i++){
         Ocorrencias[i].first  = i;
         Ocorrencias[i].second = 0;
     }
-    //std::set<int> hs;
+    vecRetorno* ret = new(std::nothrow)vecRetorno;
+    
     for(int y = 0; y < m_height; y++){
         for (int x = 0; x < m_width; x++){
             unsigned char color[3];
@@ -264,40 +308,60 @@ vecRetorno* Imagem::ler(const char* path, int rk, int gk, int bk ){
             m_colors[y * m_width + x].r = static_cast<int>(color[rk]);
             m_colors[y * m_width + x].b = static_cast<int>(color[bk]);
             HSV hsvC(m_colors[y * m_width + x].r, m_colors[y * m_width + x].g, m_colors[y * m_width + x].b);
-            //hs.insert(hsvC.h);
-            if(hsvC.v > 5){
-                Ocorrencias[hsvC.h].second++;
-                Ocorrencias[hsvC.s].second++;
-                Ocorrencias[hsvC.v].second++;
-            }else{
-                Ocorrencias[hsvC.v].second++;
-                ocoorenciasDeZero++;
-            }
-            
+            //ocorrencias
+            Ocorrencias[hsvC.h].second++;
+            Ocorrencias[hsvC.s].second++;
+            Ocorrencias[hsvC.v].second++;
+            //vetores HSV
+            ret->hs_values.push_back(std::make_pair(hsvC.h, hsvC.s));
+            ret->v_values.push_back(hsvC.v);
         }
         f.ignore(paddingAmount);
+        ret->height = m_height;
+        ret->width = m_width;
+        ret->FileSize = fileSize;
     }
     f.close();
     
+    std::vector<pair<int, int>> hs_Medias;
+    for(int y = 0; y < m_height; y+=2){
+       for(int x = 0; x < m_width; x+=2){
+            //media de h
+            int h1 = ret->hs_values[y * m_width + x].first;
+            int h2 = ret->hs_values[y * m_width + (x+1)].first;
+            int h3 = ret->hs_values[(y+1) * m_width + x].first;
+            int h4 = ret->hs_values[(y+1) * m_width + (x+1)].first;
+            int Media_H = (h1+h2+h3+h4)/4;
+            //media de s
+            int s1 = ret->hs_values[y * m_width + x].second;
+            int s2 = ret->hs_values[y * m_width + (x+1)].second;
+            int s3 = ret->hs_values[(y+1) * m_width + x].second;
+            int s4 = ret->hs_values[(y+1) * m_width + (x+1)].second;
+            int Media_S = (s1+s2+s3+s4)/4;
+            hs_Medias.push_back(std::make_pair(Media_H,  Media_S));
+        }
+    }
+    ret->hs_values.clear();
+    for(auto val : hs_Medias){
+        ret->hs_values.push_back(val);
+    }
+
+    //para fazer o vetor de frequencias
     insertionSort(Ocorrencias, 256);
     for (int i = 0; i < 256; i++){
         Ocorrencias[i].second = i;
     }
-    /*for (int i = 0; i < 256; i++){
-        std::cout << "Cor em hsv: "<< Ocorrencias[i].first << " ocorrencias: " << Ocorrencias[i].second << "\n";
-    }*/
-    vecRetorno* ret = new(std::nothrow)vecRetorno;
-    ret->hs_size = m_width*m_height - ocoorenciasDeZero;
-    ret->v_size  = m_width*m_height;
+
     for (int i = 0; i < 256; i++){
         ret->frequencia[i].first  =  Ocorrencias[i].first;
         ret->frequencia[i].second = Ocorrencias[i].second;
     }
     
-    /*for (const auto& valor : hOcr) {
-        std::cout << "Cor em hsv: "<< valor << " ocorrencias: " << ocorrenciasDeH[valor] << "\n";
-    }*/
 
+    std::cout << "h " << ret->hs_values[10].first << "\n";
+    std::cout << "s " << ret->hs_values[10].second << "\n";
+    std::cout << "v " << ret->v_values[10] << "\n";
+    
     std::cout << "arquivo " << path << " lido\n";
 
     return ret;
