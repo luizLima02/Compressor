@@ -4,6 +4,9 @@
 #include"estruturas.hpp"
 #include<string>
 #include <bitset>
+#include <chrono>
+#include <thread>
+#include <sys/stat.h>
 
 
 std::string caminhoSalvo = "ImagensSalvas";
@@ -71,19 +74,16 @@ int writeBites(const char* path, string Hbits, string Sbits, string Vbits, pair<
     }
 
     ///completa H
-    cout << "H bits: " << Hbits.size() % 8 << std::endl;
     int h = Hbits.size() % 8;
     for(int i = 0; i < (8-h); i++)
         Hbits.append("0");
 
     ///completa S
-    cout << "S bits: " << Sbits.size() % 8<< std::endl;
     int s = Sbits.size() % 8;
     for(int i = 0; i < (8-s); i++)
         Sbits.append("0");
     
     ///completa V
-    cout << "V bits: " << Vbits.size() % 8<< std::endl;
     int v = Vbits.size() % 8;
     for(int i = 0; i < (8-v); i++)
         Vbits.append("0");
@@ -103,8 +103,6 @@ int writeBites(const char* path, string Hbits, string Sbits, string Vbits, pair<
             k = 0;
             c = c & 255;
             f.write(&c, sizeof(c));
-            if(i == 7){cout << "primeiro byte escrito: " << int(c) << std::endl;}
-            if(i == Hbits.size()-1){cout << "ultimo byte escrito: " << int(c) << std::endl;}
             c = c & 0;
         }
     }
@@ -122,8 +120,6 @@ int writeBites(const char* path, string Hbits, string Sbits, string Vbits, pair<
             k = 0;
             z = z & 255;
             f.write(&z, sizeof(z));
-            if(i == 7){cout << "primeiro byte escrito S: " << int(z) << std::endl;}
-            if(i == Sbits.size()-1){cout << "ultimo byte escrito S: " << (int(z) & 255) << std::endl;}
             z = z & 0;
         }
     }
@@ -142,8 +138,6 @@ int writeBites(const char* path, string Hbits, string Sbits, string Vbits, pair<
             k = 0;
             w = int(w) & 255;
             f.write(&w, sizeof(w));
-            if(i == 7){cout << "primeiro byte escrito V: " << (int(w) & 255) << std::endl;}
-            if(i == Vbits.size()-1){cout << "ultimo byte escrito V: " << (int(w) & 255) << std::endl;}
             w = w & 0;
         }
     }
@@ -254,168 +248,205 @@ HSV_Compac* descompactar(const char* path){
     f.close();
     return compac;
 }
-/*
+
 
 void SalvarBmp(const char* path, std::vector<int> h, std::vector<int> s, std::vector<int> v, int width, int height){
-    /*std::fstream f;
-    f.open(path, std::ios::out | std::ios::binary);
-    
-    if(!f.is_open()){
-        std::cout << "Erro ao salvar\n";
-        return;
-    }*/
 
-    //std::vector<Color> m_colors;
-    //m_colors.reserve(width * height);
-    /*unsigned char bmpPad[3] = {0, 0, 0};
-    const int paddingAmount = ((4 - (width * 3) % 4) % 4);
-
-    const int fileHeaderSize = 14;
-    const int informationHeaderSize = 40;
-    const int fileSize = fileHeaderSize + informationHeaderSize + width * height * 3 + paddingAmount * height;
-
-    unsigned char fileHeader[fileHeaderSize];
-    //file type
-    fileHeader[0] = 'B';
-    fileHeader[1] = 'M';
-    //file size
-    fileHeader[2] = fileSize;
-    fileHeader[3] = fileSize >> 8;
-    fileHeader[4] = fileSize >> 16;
-    fileHeader[5] = fileSize >> 24;
-    //reserved 1
-    fileHeader[6] = 0;
-    fileHeader[7] = 0;
-    //reservado 2
-    fileHeader[8] = 0;
-    fileHeader[9] = 0;
-    //pixel data offset
-    fileHeader[10] = fileHeaderSize + informationHeaderSize;
-    fileHeader[11] = 0;
-    fileHeader[12] = 0;
-    fileHeader[13] = 0;
-
-
-    unsigned char informationHeader[informationHeaderSize];
-    //header size
-    informationHeader[0] = informationHeaderSize;
-    informationHeader[1] = 0;
-    informationHeader[2] = 0;
-    informationHeader[3] = 0;
-    //image width
-    informationHeader[4] = width;
-    informationHeader[5] = width >> 8;
-    informationHeader[6] = width >> 16;
-    informationHeader[7] = width >> 24;
-    //image height
-    informationHeader[8] = height;
-    informationHeader[9] = height >> 8;
-    informationHeader[10] = height >> 16;
-    informationHeader[11] = height >> 24;
-    //planes
-    informationHeader[12] = 1;
-    informationHeader[13] = 0;
-    //bits per pixel(rgb)
-    informationHeader[14] = 24;
-    informationHeader[15] = 0;
-    //compression (no compression) 
-    informationHeader[16] = 0;
-    informationHeader[17] = 0;
-    informationHeader[18] = 0;
-    informationHeader[19] = 0;
-    //image size (no compression) 
-    informationHeader[20] = 0;
-    informationHeader[21] = 0;
-    informationHeader[22] = 0;
-    informationHeader[23] = 0;
-    //X pixels per meter
-    informationHeader[24] = 0;
-    informationHeader[25] = 0;
-    informationHeader[26] = 0;
-    informationHeader[27] = 0;
-    //Y pixels per meter
-    informationHeader[28] = 0;
-    informationHeader[29] = 0;
-    informationHeader[30] = 0;
-    informationHeader[31] = 0;
-    //total colors
-    informationHeader[32] = 0;
-    informationHeader[33] = 0;
-    informationHeader[34] = 0;
-    informationHeader[35] = 0;
-    //important colors
-    informationHeader[36] = 0;
-    informationHeader[37] = 0;
-    informationHeader[38] = 0;
-    informationHeader[39] = 0;
-
-    f.write(reinterpret_cast<char*>(fileHeader), fileHeaderSize);
-    f.write(reinterpret_cast<char*>(informationHeader), informationHeaderSize);
-
-
-    Imagem img(width, height);
-    //make rgb mat from hsv
-    for(int y = 0; y < height; y+=1){
-        for (int x = 0; x < width; x+=4){
-           Color cor1 = hsvToRgb(h[x], s[x], v[y * width + x]);
-           Color cor2 = hsvToRgb(h[x], s[x], v[y * width + x+1]);
-           Color cor3 = hsvToRgb(h[x], s[x], v[(y) * width + x+2]);
-           Color cor4 = hsvToRgb(h[x], s[x], v[(y) * width + x+3]);
-           img.setColor(cor1, x, y);
-           img.setColor(cor2, x+1, y);
-           img.setColor(cor3, x+2, y);
-           img.setColor(cor4, x+3, y);
-        }
+    std::vector<HSV> coresHSV;
+    coresHSV.resize(width * height);
+    for(int i = 0; i < (width * height); i++){
+        coresHSV[i].v = v[i];
     }
-    img.salvar(path);
+    
+    for(int y = 0, y2 = 0; y < (height/2); y++, y2+=2){
+        for(int x = 0, x2 = 0; x < (width/2); x++, x2+=2){
+            coresHSV[y2 * width + x2].h = h[y * width/2 + x];
+            coresHSV[y2 * width + (x2+1)].h = h[y * width/2 + x];
+            coresHSV[(y2+1) * width + x2].h = h[y * width/2 + x];
+            coresHSV[(y2+1) * width + (x2+1)].h = h[y * width/2 + x];
+
+            coresHSV[y2 * width + x2].s = s[y * width/2 + x];
+            coresHSV[y2 * width + (x2+1)].s = s[y * width/2 + x];
+            coresHSV[(y2+1) * width + x2].s = s[y * width/2 + x];
+            coresHSV[(y2+1) * width + (x2+1)].s = s[y * width/2 + x];
+        }   
+    }
+
+    Imagem imgag(width, height);
+    for(int i = 0; i < (width * height); i++){
+        if(coresHSV[i].v <= 5){
+            auto c = hsvToRgb(0, 0, 0);
+            imgag.m_colors[i] = c;
+        }else{
+            auto c = hsvToRgb(coresHSV[i].h, coresHSV[i].s, coresHSV[i].v);
+            imgag.m_colors[i] = c;
+        }
+        
+    }
+
+
+    imgag.salvar(path);
     std::cout << "Imagem salva para: " << path <<"\n";
 }
-*/
+
 
 int main(){
 	std::cout << "start conversor!\n";
 
-	Imagem img(0, 0);
-	vecRetorno *v = img.ler("benchmark.bmp", 1,0,2, 2);
-  
-    
-    //HSV_Compac* compac = ;
+    string local;
+    string nomeArquivo;
+    string formatoAr = ".bmp";
+    string fullPath;
+    std::cout << "Digite 1: para compactar arquivo\n";
+    std::cout << "Digite 2: para descompactar arquivo\n";
+    std::cout << "Opcao: ";
+    int modo;
+    cin >> modo;
+    if(modo == 1){
+        //pega o nome da Folder
+        /*std::cout << "Digite local do arquivo: ";
+        cin >> local;
+        struct stat sb;
+        //verifica se a Folder existe
+        if (stat(local.c_str(), &sb) == 1){
+            cout << "Folder is invalid!";
+            using namespace std::this_thread; // sleep_for, sleep_until
+            using namespace std::chrono; // nanoseconds, system_clock, seconds
 
+            //sleep_for(nanoseconds(10));
+            sleep_until(system_clock::now() + seconds(3));
+            return 1;
+        }
+        local.append("/");*/
+
+        //pega o nome da Folder
+        std::cout << "Digite nome do arquivo: ";
+        cin >> nomeArquivo;
+
+
+        fullPath =  "Imagens/" + nomeArquivo + formatoAr;
+
+        //abre a imagem e salva
+        Imagem img(0, 0);
+        vecRetorno *v = img.ler(fullPath.c_str() , 2,1,0, 2);
+
+        auto arvore = huffman(v->frequencia, 256);
+
+        auto hue         = stringFromH(v->hs_values, arvore);
+     
+        auto values      = stringFromV(v->v_values, arvore);
+
+        auto saturation  = stringFromS(v->hs_values, arvore);
+
+
+        string saidaS = "Imagens/" + nomeArquivo + ".ln";
+
+        writeBites(saidaS.c_str(), hue, saturation, values, v->frequencia, v->FileSize, v->width, v->height);
+
+    }else if(modo == 2){
+         //pega o nome da Folder
+        /*std::cout << "Digite local do arquivo: ";
+        cin >> local;
+        struct stat sb;
+        //verifica se a Folder existe
+        if (stat(local.c_str(), &sb) == 1){
+            cout << "Folder is invalid!";
+            using namespace std::this_thread; // sleep_for, sleep_until
+            using namespace std::chrono; // nanoseconds, system_clock, seconds
+
+            //sleep_for(nanoseconds(10));
+            sleep_until(system_clock::now() + seconds(3));
+            return 1;
+        }
+        local.append("/");*/
+        //pega o nome da Folder
+        std::cout << "Digite nome do arquivo: ";
+        cin >> nomeArquivo;
+
+
+        fullPath = "Imagens/" + nomeArquivo + ".ln";
+
+        //abre a imagem e salva
+        auto desc = descompactar(fullPath.c_str());
+
+        insertionSort(desc->frequencia, 256);
+        for (int i = 0; i < 256; i++){
+            desc->frequencia[i].second = i;
+        }
+
+        auto arvore = huffman(desc->frequencia, 256);
+
+        auto hueDescompac = getNumeroFromLista(desc->h, arvore);
+        auto satDescompac = getNumeroFromLista(desc->s, arvore);
+        auto valDescompac = getNumeroFromLista(desc->v, arvore);
+
+        string saida =  "Imagens/" + nomeArquivo + "LN.bmp";
+        SalvarBmp(saida.c_str(), hueDescompac, satDescompac, valDescompac, desc->width, desc->height);
+        
+
+    }else{
+        std::cout << "Opcao nao listada fechando..";
+        using namespace std::this_thread; // sleep_for, sleep_until
+        using namespace std::chrono; // nanoseconds, system_clock, seconds
+
+        //sleep_for(nanoseconds(10));
+        sleep_until(system_clock::now() + seconds(3));
+        return 1;
+    }
+	//Imagem img(0, 0);
+    //imagem3.bmp
+    //benchmark.bmp
+	//vecRetorno *v = img.ler("benchmark.bmp", 2,1,0, 2);
+  
+    /*for(int i = 0; i < 256; i++)
+        std::cout << v->frequencia[i].first << " " << v->frequencia[i].second << std::endl;
+
+    //HSV_Compac* compac = ;
+/**
     auto arvore = huffman(v->frequencia, 256);
 
     //std::cout <<"posicao 0 " << v->hs_values[0].second <<"\n";
 
-    std::cout << "Convertendo hue para string" <<"\n";
+   // std::cout << "Convertendo hue para string" <<"\n";
     auto hue         = stringFromH(v->hs_values, arvore);
  
-    std::cout << "Convertendo values para string" <<"\n";
+    //std::cout << "Convertendo values para string" <<"\n";
     auto values      = stringFromV(v->v_values, arvore);
 
-    std::cout << "Convertendo saturation para string" <<"\n";
+    //std::cout << "Convertendo saturation para string" <<"\n";
     auto saturation  = stringFromS(v->hs_values, arvore);
 
-    std::cout <<values.size() % 8<<"\n";
+    std::cout <<values.size() % 8 <<"\n";
 
     writeBites("Comprimido.ln", hue, saturation, values, v->frequencia, v->FileSize, v->width, v->height);
 
-    std::cout <<values.size() % 8<<"\n";
+    
+
     auto desc = descompactar("Comprimido.ln");
+
+    insertionSort(desc->frequencia, 256);
+    for (int i = 0; i < 256; i++){
+        desc->frequencia[i].second = i;
+    }
+
+    auto arvore = huffman(desc->frequencia, 256);
 
     auto hueDescompac = getNumeroFromLista(desc->h, arvore);
     auto satDescompac = getNumeroFromLista(desc->s, arvore);
     auto valDescompac = getNumeroFromLista(desc->v, arvore);
 
-    std::cout << "h: " << hueDescompac[0] <<"\n";
-    std::cout << "s: " << satDescompac[0] <<"\n";
-    std::cout << "v: " << valDescompac[0] <<"\n";
+   // for(int i = 0; i < 256; i++)
+      //  std::cout << desc->frequencia[i].first << " " <<desc->frequencia[i].second << std::endl;
+    
+    //img.salvar("ImagensSalvas/Originalsalva1.bmp");
 
-    //SalvarBmp("ImagensSalvas/salva1.bmp", hueDescompac, satDescompac, valDescompac, desc->width, desc->height);
+    SalvarBmp("ImagensSalvas/salva1.bmp", hueDescompac, satDescompac, valDescompac, desc->width, desc->height);
 
-    //std::cout << hue.size()/*hueDescompac.size()*/ <<"\n";
+    //std::cout << hue.size()/*hueDescompac.size() <<"\n";*/
     //std::cout << desc->h.size()/*hueDescompac.size()*/ <<"\n";
-    std::cout << (hue == desc->h)/*hueDescompac.size()*/ <<"\n";
-    std::cout << (saturation == desc->s)/*hueDescompac.size()*/ <<"\n";
-    std::cout << (values == desc->v)/*hueDescompac.size()*/ <<"\n";
+    //std::cout << (hue == desc->h)/*hueDescompac.size()*/ <<"\n";
+    //std::cout << (saturation == desc->s)/*hueDescompac.size()*/ <<"\n";
+    //std::cout << (values == desc->v)/*hueDescompac.size()*/ <<"\n";
    // std::cout << values.size()/*hueDescompac.size()*/ <<"\n";
     //std::cout << desc->v.size()/*hueDescompac.size()*/ <<"\n";
     //std::cout << (hue == desc->h)/*hueDescompac.size()*/ <<"\n";
@@ -428,6 +459,7 @@ int main(){
 	//std::cout << desc->s.size()/*desc->v.substr(284168,8)*/ <<"\n";
 
 
+    std::cout << std::endl;
 	system("pause");
 	return 0;
 }

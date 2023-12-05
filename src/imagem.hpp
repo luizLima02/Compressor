@@ -11,8 +11,10 @@
 #include<set>
 #include<string>
 #include<new>
+#include<array>
 
 using std::string;
+using std::array;
 
 using std::pair;
 
@@ -194,7 +196,7 @@ Color hsvToRgb(int h, int si, int vi) {
 
     return Color(r, g, b);
 }
-
+/*
 std::vector<Color> FromHSV(std::vector<int> h, std::vector<int> s, std::vector<int> v, int width, int height){
     std::vector<Color> colRet;
     colRet.reserve(width * height);
@@ -205,7 +207,7 @@ std::vector<Color> FromHSV(std::vector<int> h, std::vector<int> s, std::vector<i
         }
     }
 }
-
+*/
 
 struct vecRetorno{
     int width;
@@ -263,6 +265,11 @@ void Imagem::setColor(const Color& color, int x, int y){
     m_colors[y * m_width + x].b = color.b;
 }
 
+int mediana(int x1, int x2, int x3, int x4){
+    array<int, 4> num = {x1, x2, x3, x4};
+    std::sort(num.begin(), num.end());
+    return (num[1] + num[2]) / 2;
+}
 
 vecRetorno* Imagem::ler(const char* path, int rk, int gk, int bk, int window){
    std::fstream f;
@@ -288,7 +295,7 @@ vecRetorno* Imagem::ler(const char* path, int rk, int gk, int bk, int window){
     m_width =  informationHeader[4] + (informationHeader[5] << 8) + (informationHeader[6]  << 16) + (informationHeader[7]   << 24);
     m_height = informationHeader[8] + (informationHeader[9] << 8) + (informationHeader[10] << 16) + (informationHeader[11]  << 24);
 
-    m_colors.reserve(m_width * m_height);
+    m_colors.resize(m_width * m_height);
 
     const int paddingAmount = ((4 - (m_width * 3) % 4) % 4);
     
@@ -304,16 +311,18 @@ vecRetorno* Imagem::ler(const char* path, int rk, int gk, int bk, int window){
         for (int x = 0; x < m_width; x++){
             unsigned char color[3];
             f.read(reinterpret_cast<char*>(color), 3);
-            m_colors[y * m_width + x].g = static_cast<int>(color[gk]);
             m_colors[y * m_width + x].r = static_cast<int>(color[rk]);
+            m_colors[y * m_width + x].g = static_cast<int>(color[gk]);
             m_colors[y * m_width + x].b = static_cast<int>(color[bk]);
-            HSV hsvC(m_colors[y * m_width + x].r, m_colors[y * m_width + x].g, m_colors[y * m_width + x].b);
-            //ocorrencias
-            Ocorrencias[hsvC.h].second++;
-            Ocorrencias[hsvC.s].second++;
-            Ocorrencias[hsvC.v].second++;
+ 
+            HSV hsvC(Color(m_colors[y * m_width + x].r, m_colors[y * m_width + x].g, m_colors[y * m_width + x].b));
             //vetores HSV
-            ret->hs_values.push_back(std::make_pair(hsvC.h, hsvC.s));
+            if(hsvC.v <= 5){
+                ret->hs_values.push_back(std::make_pair(0,0));
+            }else{
+                ret->hs_values.push_back(std::make_pair(hsvC.h,hsvC.s));
+            }
+            
             ret->v_values.push_back(hsvC.v);
         }
         f.ignore(paddingAmount);
@@ -321,31 +330,46 @@ vecRetorno* Imagem::ler(const char* path, int rk, int gk, int bk, int window){
         ret->width = m_width;
         ret->FileSize = fileSize;
     }
+    //terminei de ler o arquivo
     f.close();
-    
-    std::vector<pair<int, int>> hs_Medias;
+
+
+    std::vector<int> h_Medias;
+    std::vector<int> s_Medias;
     for(int y = 0; y < m_height; y+=2){
        for(int x = 0; x < m_width; x+=2){
             //media de h
             int h1 = ret->hs_values[y * m_width + x].first;
             int h2 = ret->hs_values[y * m_width + (x+1)].first;
-            int h3 = ret->hs_values[(y+1) * m_width + x].first;
+            int h3 = ret->hs_values[(y+1) * m_width + (x)].first;
             int h4 = ret->hs_values[(y+1) * m_width + (x+1)].first;
-            int Media_H = (h1+h2+h3+h4)/4;
+            int Media_H = mediana(h1,h2,h3,h4);
+            h_Medias.push_back(Media_H);
             //media de s
             int s1 = ret->hs_values[y * m_width + x].second;
             int s2 = ret->hs_values[y * m_width + (x+1)].second;
-            int s3 = ret->hs_values[(y+1) * m_width + x].second;
+            int s3 = ret->hs_values[(y+1) * m_width + (x)].second;
             int s4 = ret->hs_values[(y+1) * m_width + (x+1)].second;
-            int Media_S = (s1+s2+s3+s4)/4;
-            hs_Medias.push_back(std::make_pair(Media_H,  Media_S));
+            int Media_S = mediana(s1,s2,s3,s4);
+            s_Medias.push_back(Media_S);
         }
     }
     ret->hs_values.clear();
-    for(auto val : hs_Medias){
-        ret->hs_values.push_back(val);
+    for(int i = 0; i < h_Medias.size(); i++){
+        int h = h_Medias[i];
+        int s = s_Medias[i];
+        ret->hs_values.push_back(std::make_pair(h, s));
     }
 
+    //cria frequencias
+    for(int i = 0; i < ret->hs_values.size(); i++){
+        Ocorrencias[ret->hs_values[i].first].second++;
+        Ocorrencias[ret->hs_values[i].second].second++;
+    }
+    for(int i = 0; i < ret->v_values.size(); i++){
+        Ocorrencias[ret->v_values[i]].second++;
+    }
+    
     //para fazer o vetor de frequencias
     insertionSort(Ocorrencias, 256);
     for (int i = 0; i < 256; i++){
@@ -357,11 +381,11 @@ vecRetorno* Imagem::ler(const char* path, int rk, int gk, int bk, int window){
         ret->frequencia[i].second = Ocorrencias[i].second;
     }
     
-
-    std::cout << "h " << ret->hs_values[10].first << "\n";
-    std::cout << "s " << ret->hs_values[10].second << "\n";
-    std::cout << "v " << ret->v_values[10] << "\n";
-    
+    /*
+    std::cout << "h " << ret->hs_values[0].first << "\n";
+    std::cout << "s " << ret->hs_values[0].second << "\n";
+    std::cout << "v " << ret->v_values[0] << "\n";
+    */
     std::cout << "arquivo " << path << " lido\n";
 
     return ret;
@@ -382,7 +406,7 @@ void Imagem::salvar(const char* path) const{
 
     const int fileHeaderSize = 14;
     const int informationHeaderSize = 40;
-    const int fileSize = fileHeaderSize + informationHeaderSize + m_width * m_height * 3 + paddingAmount * m_height;
+    const int fileSize = fileHeaderSize + informationHeaderSize + (m_width * m_height * 3) + (paddingAmount * m_height);
 
     unsigned char fileHeader[fileHeaderSize];
     //file type
